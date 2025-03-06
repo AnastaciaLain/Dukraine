@@ -51,8 +51,8 @@ function initiatePeacePact() {
     text("It seems there are no security-guarantees planned for this.", width/2, height/2 - 20);
     
     // Create confirmation buttons
-    let confirmButton = createGameButton("Yes, I'm sure");
-    confirmButton.position(width/2 - 150, height/2 + 50);
+    let confirmButton = createGameButton("Yes, Despite no security-guarantee");
+    confirmButton.position(width/5, height/2 + 50);
     confirmButton.mousePressed(confirmPeacePact);
     
     let cancelButton = createGameButton('No, go back');
@@ -71,9 +71,12 @@ function confirmPeacePact() {
     let continueButton = createGameButton('Continue');
     continueButton.position(width/2 - 50, height/2 + 100);
     continueButton.mousePressed(function() {
-        turnCounter += 20;
+        turnCounter += 25;
         startGameOver();
     });
+
+    // Call playTurn to handle the enemy's turn
+    playTurn();
 }
 
 function cancelPeacePact() {
@@ -98,7 +101,6 @@ function continueWarfare() {
     for (let btn of document.getElementsByTagName('button')) {
         if (btn.innerHTML === 'Negotiate Peace') {
             btn.remove();
-            turnCounter += 1;
             break;
         }
     }
@@ -127,17 +129,27 @@ function continueWarfare() {
     // Return to main game state
     gameState = "mainGame";
     
+    // Increment turn counter
+    turnCounter++;
+
     // Check for turn-specific events
-    if (turnCounter === 15) {
+    if (turnCounter === 1) {
+        triggerEvent1();
+    } else if (turnCounter === 3) {
+        triggerEvent3();
+    } else if (turnCounter === 10) {
+        triggerEvent10();
+    } else if (turnCounter === 11) {
+        triggerEvent11();
+    } else if (turnCounter === 15) {
         triggerEvent15();
-    } else if (turnCounter === 16) {
-        triggerEvent16();
-    } else if (turnCounter === 20) {
-        triggerEvent20();
     } else {
         // Trigger random event
         triggerRandomEvent();
     }
+
+    // Call playTurn to handle the enemy's turn
+    playTurn();
 }
 
 function startGameOver() {
@@ -194,16 +206,86 @@ function playTurn() {
         }
 
         game.turn = 'player';
-        console.log("Player's turn starts");
+
+        // Increment turn counter
+        turnCounter++;
 
         // Check for events
-        if (turnCounter === 15) {
+        if (turnCounter === 1) {
+            triggerEvent1();
+        } else if (turnCounter === 3) {
+            triggerEvent3();
+        } else if (turnCounter === 10) {
+            triggerEvent10();
+        } else if (turnCounter === 11) {
+            triggerEvent11();
+        } else if (turnCounter === 15) {
             triggerEvent15();
-        } else if (turnCounter === 25) {
-            triggerEvent25();
         }
     }
     game.checkGameOver();
+}
+
+// Define event functions
+function triggerEvent1() {
+    displayEventText("The attack was thankfully expected, and they made less progress than anticipated.");
+    player.guns += 30;
+}
+
+function triggerEvent3() {
+    displayEventText("A slow stalemate seems to be forming, this could take a long while.");
+}
+
+function triggerEvent10() {
+    displayEventText("X is holding an election with a new popular candidate.");
+    
+    // Create New Leader button if it doesn't exist
+    if (!buttonNewLeader) {
+        buttonNewLeader = createGameButton('Negotiate with New Leader');
+        buttonNewLeader.position(3, 250);
+        buttonNewLeader.mousePressed(function(){
+            gameState = "rhetoricGameNewLeader";
+            setupRhetoricGame();
+        });
+    }
+}
+
+function triggerEvent11() {
+    displayEventText("The new candidate seems unsympathetic to the struggles of dU.");
+}
+
+function triggerEvent15() {
+    displayEventText("The new leader has won the election and will start supporting your enemy, Z.");
+    
+    // No more negotiating with X
+    if (buttonNewLeader) {
+        buttonNewLeader.remove();
+    }
+    if (buttonX) {
+        buttonX.remove();
+    }
+    
+    // Negatively impact player resources
+    player.guns -= 30;
+    player.journalistPower -= 20;
+    
+    // Update nation relationships
+    nationSympathy[NATION_X] -= 70;
+    nationSympathy[NATION_X] = Math.max(0, nationSympathy[NATION_X]);
+    nationSympathy[NATION_Y] += 20;
+    nationSympathy[NATION_Y] = Math.min(100, nationSympathy[NATION_Y]);
+    
+    // Take 3 random player squares
+    let playerSquares = grid.reduce((acc, square, index) => 
+        square.owner === 'player' ? [...acc, index] : acc, []);
+    
+    for (let i = 0; i < 3 && playerSquares.length > 0; i++) {
+        let randomIndex = Math.floor(Math.random() * playerSquares.length);
+        let squareToTake = playerSquares[randomIndex];
+        
+        takeOverLand('enemy', squareToTake);
+        playerSquares.splice(randomIndex, 1);
+    }
 }
 
 function getNeighbors(index) {

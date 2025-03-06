@@ -20,7 +20,7 @@ let shopVisible = false;
 
 // Game state tracking
 let playerMoves = 0;
-let turnCounter = 19;
+let turnCounter = 0;
 let canMakeMoves = true; //hopefully im making this work //nevermind i might not even have to
 
 // Event shit
@@ -81,7 +81,7 @@ function createNegotiationButtons() {
     buttonX = createGameButton('Negotiate with X');
     buttonX.position(3, 220);
     buttonX.mousePressed(() => {
-        gameState = "rhetoricGameX";
+        gameState = "rhetoricGame";
         setupRhetoricGame();
     });
     
@@ -148,8 +148,8 @@ function drawNationSympathy() {
     textAlign(LEFT);
     
     let nations = [
-        { id: 'X', y: 320 },
-        { id: 'Y', y: 340 }
+        { id: 'X', y: 260 },
+        { id: 'Y', y: 280 }
     ];
     
     nations.forEach(nation => {
@@ -259,8 +259,7 @@ function setupRandomEvents() {
             "International media has increased coverage of your cause.",
             function() {
                 player.journalistPower += 20;
-                nations.X.sympathy += 15;
-                nations.Y.sympathy += 25;
+                player.sympathy += 5;
                 displayEventText(this.description);
             }
         ),
@@ -268,8 +267,7 @@ function setupRandomEvents() {
             "Popular Support",
             "Your people rally behind your cause, offering support.",
             function() {
-                nations.X.sympathy += 14;
-                nations.Y.sympathy += 14;
+                player.sympathy += 10;
                 displayEventText(this.description);
             }
         ),
@@ -315,7 +313,16 @@ function setupRandomEvents() {
     ];
 }
 
-function triggerEvent15() {
+function triggerEvent1() {
+    displayEventText("The attack was thankfully expected, and they made less progress than anticipated.")
+    player.guns += 30;
+}
+
+function triggerEvent3() {
+    displayEventText("A slow stalemate seems to be forming, this could take a long while.")
+}
+
+function triggerEvent10() {
     displayEventText("X is holding an election with a new popular candidate.");
     
     // Create New Leader button if it doesn't exist
@@ -327,47 +334,6 @@ function triggerEvent15() {
             setupRhetoricGame();
         });
     }
-}
-
-function triggerEvent16() {
-    displayEventText("The new candidate seems unsympathetic to the struggles of dU.");
-    nations.X.eventID = 16;
-}
-
-function triggerEvent20() {
-    displayEventText("The new leader has won the election and will start supporting your enemy, Z.");
-    
-    // No more negotiating with X :) you invader
-    if (buttonNewLeader) {
-        buttonNewLeader.remove();
-    }
-    if (buttonX) {
-        buttonX.remove();
-    }
-    
-    // Negatively impact player resources
-    player.guns = Math.max(0, player.guns - 30);
-    player.journalistPower = Math.max(0, player.journalistPower - 20);
-    
-    // Update nation relationships
-    nations.X.sympathy = Math.max(0, nations.X.sympathy - 70);
-    nations.X.power = 0;  // No support from X (not that you can get to it)
-    nations.Y.power = 1.8;  // Y starts giving some guns
-    
-    // Take 3 random player squares
-    for (let i = 0; i < 3 && playerSquares.length > 0; i++) {
-        let randomIndex = Math.floor(Math.random() * playerSquares.length);
-        let squareToTake = playerSquares[randomIndex];
-        
-        takeOverLand('enemy', squareToTake);
-        // Remove this square from possible future selections
-        playerSquares.splice(randomIndex, 1);
-    }
-    
-    
-    // Update X nation's state
-    nations.X.turn += 1;
-    nations.X.eventID = 20;
 }
 
 function showResourceShop() {
