@@ -70,7 +70,10 @@ function confirmPeacePact() {
     // Create a button to continue
     let continueButton = createGameButton('Continue');
     continueButton.position(width/2 - 50, height/2 + 100);
-    continueButton.mousePressed(startGameOver);
+    continueButton.mousePressed(function() {
+        turnCounter += 20;
+        startGameOver();
+    });
 }
 
 function cancelPeacePact() {
@@ -127,6 +130,8 @@ function continueWarfare() {
     // Check for turn-specific events
     if (turnCounter === 15) {
         triggerEvent15();
+    } else if (turnCounter === 16) {
+        triggerEvent16();
     } else if (turnCounter === 20) {
         triggerEvent20();
     } else {
@@ -142,14 +147,15 @@ function startGameOver() {
         grid[i].owner = 'enemy';
     }
 
-    textSize(32);
-    fill(255, 0, 0);
-    textAlign(CENTER, CENTER);
-    text("Game Over", width / 2, height / 2);
+
 
     // Return to main drawing but end game
     gameState = "end";
     drawMainGamePage();
+    textSize(32);
+    fill(255, 0, 0);
+    textAlign(CENTER, CENTER);
+    text("Game Over", width / 2.1, height / 2.8);
     removeAllButtons();
 }
 
@@ -161,9 +167,8 @@ function takeOverLand(character, index) {
 
 function playTurn() {
     if (game.turn === 'enemy') {
-        text("Enemy's turn is active", 10, 10);
         let moves = 0;
-        while (moves < 2) {
+        for (let moves = 0; moves < 2; moves++) {
             // Find all player squares adjacent to enemy squares
             let validChoices = [];
             for (let i = 0; i < gridSize; i++) {
@@ -182,8 +187,7 @@ function playTurn() {
             if (validChoices.length > 0) {
                 let choice = validChoices[Math.floor(Math.random() * validChoices.length)];
                 takeOverLand('enemy', choice);
-                moves++;
-                console.log(`Enemy moves: ${moves}`);
+                console.log(`Enemy moves: ${moves + 1}`);
             } else {
                 break; // No valid choices left
             }

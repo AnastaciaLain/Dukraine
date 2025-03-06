@@ -20,7 +20,7 @@ let shopVisible = false;
 
 // Game state tracking
 let playerMoves = 0;
-let turnCounter = 0;
+let turnCounter = 19;
 let canMakeMoves = true; //hopefully im making this work //nevermind i might not even have to
 
 // Event shit
@@ -81,7 +81,7 @@ function createNegotiationButtons() {
     buttonX = createGameButton('Negotiate with X');
     buttonX.position(3, 220);
     buttonX.mousePressed(() => {
-        gameState = "rhetoricGame";
+        gameState = "rhetoricGameX";
         setupRhetoricGame();
     });
     
@@ -180,7 +180,7 @@ function drawGrid() {
     }
 }
 
-function findConvertibleEnemySquares() {
+function findConvertibleEnemySquares() { //copilot saved me
     let convertible = [];
     for (let i = 0; i < gridSize; i++) {
         if (grid[i].owner === 'enemy') {
@@ -209,15 +209,13 @@ function displayEventText(text) {
 }
 
 function triggerRandomEvent() {
-    // Don't trigger random events during special turn events
-    if (currentTurnEvents.length > 0 || turnCounter === 15 || turnCounter === 20) return;
     
     // 70% chance of random event
     if (Math.random() < 0.7) {
         let randomEvent = randomEvents[Math.floor(Math.random() * randomEvents.length)];
         randomEvent.effects.call(randomEvent);
         
-        // Add to current turn events
+    // Add to current turn events
         currentTurnEvents.push(randomEvent);
     }
 }
@@ -261,7 +259,8 @@ function setupRandomEvents() {
             "International media has increased coverage of your cause.",
             function() {
                 player.journalistPower += 20;
-                player.sympathy += 5;
+                nations.X.sympathy += 15;
+                nations.Y.sympathy += 25;
                 displayEventText(this.description);
             }
         ),
@@ -269,7 +268,8 @@ function setupRandomEvents() {
             "Popular Support",
             "Your people rally behind your cause, offering support.",
             function() {
-                player.sympathy += 10;
+                nations.X.sympathy += 14;
+                nations.Y.sympathy += 14;
                 displayEventText(this.description);
             }
         ),
@@ -316,44 +316,43 @@ function setupRandomEvents() {
 }
 
 function triggerEvent15() {
-    displayEventText("X is holding an election with a new popular leader that seems to be indifferent to the struggles of dU.");
+    displayEventText("X is holding an election with a new popular candidate.");
     
     // Create New Leader button if it doesn't exist
     if (!buttonNewLeader) {
         buttonNewLeader = createGameButton('Negotiate with New Leader');
-        buttonNewLeader.position(500, 400);
+        buttonNewLeader.position(3, 250);
         buttonNewLeader.mousePressed(function(){
             gameState = "rhetoricGameNewLeader";
             setupRhetoricGame();
         });
     }
-    
-    // Update X nation's state
-    nations.X.turn += 1;
-    nations.X.eventID = 15;
+}
+
+function triggerEvent16() {
+    displayEventText("The new candidate seems unsympathetic to the struggles of dU.");
+    nations.X.eventID = 16;
 }
 
 function triggerEvent20() {
     displayEventText("The new leader has won the election and will start supporting your enemy, Z.");
     
-    // Remove New Leader button if it exists
+    // No more negotiating with X :) you invader
     if (buttonNewLeader) {
         buttonNewLeader.remove();
+    }
+    if (buttonX) {
+        buttonX.remove();
     }
     
     // Negatively impact player resources
     player.guns = Math.max(0, player.guns - 30);
     player.journalistPower = Math.max(0, player.journalistPower - 20);
-    player.sympathy = Math.max(0, player.sympathy - 15);
     
     // Update nation relationships
-    nations.X.sympathy = Math.max(0, nations.X.sympathy - 30);
-    nations.X.power = 0.5;  // Reduced support from X
-    nations.Z.power = 0.2;  // Z starts giving some guns
-    
-    // Convert some player tiles to enemy
-    let playerSquares = grid.reduce((acc, square, index) => 
-        square.owner === 'player' ? [...acc, index] : acc, []);
+    nations.X.sympathy = Math.max(0, nations.X.sympathy - 70);
+    nations.X.power = 0;  // No support from X (not that you can get to it)
+    nations.Y.power = 1.8;  // Y starts giving some guns
     
     // Take 3 random player squares
     for (let i = 0; i < 3 && playerSquares.length > 0; i++) {
@@ -365,6 +364,7 @@ function triggerEvent20() {
         playerSquares.splice(randomIndex, 1);
     }
     
+    
     // Update X nation's state
     nations.X.turn += 1;
     nations.X.eventID = 20;
@@ -373,13 +373,13 @@ function triggerEvent20() {
 function showResourceShop() {
     
     // Buy guns with money
-    let buyGunsButton = createGameButton("Buy Guns (50 Money → 25 Guns)");
-    buyGunsButton.position(400, 50);
+    let buyGunsButton = createGameButton("Buy Guns (50 Money - 35 Guns)");
+    buyGunsButton.position(400, 280);
     buyGunsButton.mousePressed(function() {
         if (player.money >= 50) {
             player.money -= 50;
-            player.guns += 25;
-            displayEventText("Purchased 25 guns for 50 money");
+            player.guns += 35;
+            displayEventText("Purchased 35 guns for 50 money");
         } else {
             displayEventText("Not enough money to buy guns");
         }
@@ -387,13 +387,13 @@ function showResourceShop() {
     shopButtons.push(buyGunsButton);
     
     // Buy journalist power with money
-    let buyJPButton = createGameButton("Buy JP (40 Money → 15 JP)");
-    buyJPButton.position(400, 80);
+    let buyJPButton = createGameButton("Buy JP (20 Money - 55 JP)");
+    buyJPButton.position(400, 305);
     buyJPButton.mousePressed(function() {
         if (player.money >= 40) {
-            player.money -= 40;
-            player.journalistPower += 15;
-            displayEventText("Purchased 15 journalist power for 40 money");
+            player.money -= 20;
+            player.journalistPower += 55;
+            displayEventText("Purchased 15 journalist power for 20 money");
         } else {
             displayEventText("Not enough money to buy journalist power");
         }
@@ -402,7 +402,7 @@ function showResourceShop() {
     
     // Close shop button
     let closeShopButton = createGameButton("Close Shop");
-    closeShopButton.position(400, 110);
+    closeShopButton.position(400, 330);
     closeShopButton.mousePressed(hideResourceShop);
     shopButtons.push(closeShopButton);
 }
