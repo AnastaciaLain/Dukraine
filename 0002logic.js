@@ -151,12 +151,12 @@ function continueWarfare() {
         triggerEvent1();
     } else if (turnCounter === 3) {
         triggerEvent3();
-    } else if (turnCounter === 10) {
-        triggerEvent10();
-    } else if (turnCounter === 11) {
-        triggerEvent11();
-    } else if (turnCounter === 15) {
-        triggerEvent15();
+    } else if (turnCounter === 7) {
+        triggerEvent7();
+    } else if (turnCounter === 8) {
+        triggerEvent8();
+    } else if (turnCounter === 12) {
+        triggerEvent12();
     } else {
         // Trigger random event
         triggerRandomEvent();
@@ -206,7 +206,7 @@ function triggerEvent3() {
     displayEventText("A slow stalemate seems to be forming, this could take a long while.");
 }
 
-function triggerEvent10() {
+function triggerEvent7() {
     displayEventText("X is holding an election with a new popular candidate.");
     
     // Create New Leader button if it doesn't exist
@@ -220,11 +220,11 @@ function triggerEvent10() {
     }
 }
 
-function triggerEvent11() {
+function triggerEvent8() {
     displayEventText("The new candidate seems unsympathetic to the struggles of dU.");
 }
 
-function triggerEvent15() {
+function triggerEvent12() {
     displayEventText("The new leader has won the election and will start supporting your enemy, Z.");
     
     // No more negotiating with X

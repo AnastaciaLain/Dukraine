@@ -298,7 +298,7 @@ function convertGreenToRed() {
 }
 
 function we15yet() {
-    if (turnCounter >= 15) {
+    if (turnCounter >= 12) {
         convertGreenToRed();
         convertGreenToRed();
         convertGreenToRed();
