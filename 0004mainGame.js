@@ -1,5 +1,5 @@
-// for some reason has to exist or game breaks
 let game;
+let gameState; 
 
 // set up territory board
 let grid = [];
@@ -11,17 +11,25 @@ let startY = 189;
 // Assets folder
 let img;
 let debateImg;
+let cloodImg;
 
 // Game buttons
-let buttonX, buttonY, buttonZ, buttonNewLeader, buttonNegotiatePeace, buttonContinueFighting, resourceShopButton;
+let allButtons = [];
+let buttonX;
+let buttonY;
+let buttonZ;
+let buttonNewLeader;
+let buttonNegotiatePeace;
+let buttonContinueFighting;
+let resourceShopButton;
+let shopButtons = []; // Initialize shopButtons as an empty array
 
-let shopButtons = [];
+let canMakeMoves = true; // Doesn't work but should've prevented player from making moves, actually i think i removed it from where it was used since it didn't work
 let shopVisible = false;
 
 // Game state tracking
 let playerMoves = 0;
 let turnCounter = 0;
-let canMakeMoves = true; //hopefully im making this work //nevermind i might not even have to
 
 // Event shit
 let eventText = "";
@@ -29,107 +37,99 @@ let eventTextTimeout = null;
 let currentTurnEvents = [];
 let randomEvents = [];
 
-/**
- * Preload game assets
- */
+
 function preload() {
     img = loadImage('assets/main.png');
     debateImg = loadImage('assets/debate.png');
+    cloodImg = loadImage('assets/clood.png');
 }
 
 function setupMainGame() {
-    // Initialize player and enemy
-    player = new Character('Du', 100, 60, 40);
+    player = new Character('Du', 100, 80, 40);
     enemy = new Character('Z', 9999, 9999, 9999);
-    
-    // Create game instance
-    game = new Game(player, enemy);
+    game = new Game(player, enemy); // apparently needed for the concept
 
-    // Initialize grid with ownership
     initializeGrid();
-    
-    // Create negotiation buttons
     createNegotiationButtons();
-    
-    // Set up random events
     setupRandomEvents();
-    
-    // Add resource conversion button to main game
 }
 
-/**
- * Initialize the game grid
- */
+function drawMainGamePage() {
+    background(255);
+    image(img, 0, 0, width, height);
+    image(cloodImg, 0, 0, width, height);
+    drawGrid();
+    drawPlayerStats();
+    drawNationSympathy();
+    drawEventText();
+}
+
 function initializeGrid() {
     grid = [];
     let enemyPercentage = 0.65;
     
     for (let i = 0; i < gridSize; i++) {
         if (i < gridSize * enemyPercentage) {
-            grid.push({ owner: 'enemy' });
+            grid.push({ owner: 'enemy' }); // since top-left is start, enemy goes from top-left to bottom-right 65% of the way through
         } else {
             grid.push({ owner: 'player' });
         }
     }
 }
 
-/**
- * Create all negotiation buttons
- */
-function createNegotiationButtons() {
-    // X negotiation button
-    buttonX = createGameButton('Negotiate with X');
+function removeAllButtons() {
+    allButtons.forEach(button => {
+        if (button) button.remove();
+    });
+    allButtons = [];
+  }
+  
+  function setup() {
+      createCanvas(640, 360);
+      setupIntroPage();
+      gameState = GAME_STATES.INTRO;
+      
+      setupRandomEvents();
+  }
+  
+
+
+function createNegotiationButtons() { // sends to rhetoricGame with slogans
+    buttonX = createButton('Negotiate with X');
     buttonX.position(3, 220);
     buttonX.mousePressed(() => {
         gameState = "rhetoricGame";
         setupRhetoricGame();
     });
-    
-    // Y negotiation button
-    buttonY = createGameButton('Negotiate with Y');
+    buttonY = createButton('Negotiate with Y');
     buttonY.position(200, 296);
     buttonY.mousePressed(() => {
         gameState = "rhetoricGameY";
         setupRhetoricGame();
     });
-    
-    // Z negotiation button
-    buttonZ = createGameButton('Negotiate with Z');
+
+    buttonZ = createButton('Negotiate with Z');
     buttonZ.position(520, 230);
     buttonZ.mousePressed(() => {
         gameState = "rhetoricGameZ";
         setupRhetoricGame();
     });
 
-    resourceShopButton = createGameButton("Resource Shop");
+    resourceShopButton = createButton("Resource Shop"); // and shop for good measure
     resourceShopButton.position(400, 255);
     resourceShopButton.mousePressed(showResourceShop);
 }
 
-/**
- * Draw the main game screen
- */
-function drawMainGamePage() {
-    background(255);
-    image(img, 0, 0, width, height);
-    drawGrid();
-    drawPlayerStats();
-    drawNationSympathy();
-}
-
-/**
- * Draw player statistics
- */
 function drawPlayerStats() {
     fill(0);
     textSize(16);
     textAlign(RIGHT);
     
     let stats = [
-        { label: "Turn:    ", value: turnCounter, y: 10 },
-        { label: "Money:", value: player.money, y: 30 },
-        { label: "Guns:  ", value: player.guns, y: 50 },
-        { label: "Journalist Power:  ", value: player.journalistPower, y: 70 }
+        { label: "Turn:        ", value: turnCounter, y: 10 },
+        { label: "Money:    ", value: player.money, y: 30 },
+        { label: "Guns:      ", value: player.guns, y: 50 },
+        { label: "Journalist Power:      ", value: player.journalistPower, y: 70 }
     ];
     
     stats.forEach(stat => {
@@ -159,9 +159,7 @@ function drawNationSympathy() {
     });
 }
 
-/**
- * Draw the game grid
- */
+// remember to check the logicjs and top let if you're messing with these numbers holy shit
 function drawGrid() {
     for (let i = 0; i < gridSize; i++) {
         let x = startX + (i % 10) * boxSize;
@@ -173,21 +171,20 @@ function drawGrid() {
         } else if (grid[i].owner === 'enemy') {
             fill(255, 0, 0);     // Red for enemy
         } else {
-            fill(0, 0, 255);     // Blue for neutral
+            fill(0, 0, 255);     // Blue for neutral (not gonna happen, but i mean)
         }
         
-        rect(x, y, boxSize, boxSize);
+        rect(x, y, boxSize, boxSize); // just wanted it up top where i could easily fuck with it, but then it got more and more annoying to scroll between)
     }
 }
 
 function findConvertibleEnemySquares() { //copilot saved me
-    let convertible = [];
+    let convertible = []; // array to shove the actually available enemy squares into
     for (let i = 0; i < gridSize; i++) {
-        if (grid[i].owner === 'enemy') {
-            let neighbors = getNeighbors(i);
-            let adjacentToPlayer = neighbors.some(neighbor => grid[neighbor] && grid[neighbor].owner === 'player');
-            if (adjacentToPlayer) {
-                convertible.push(i);
+        if (grid[i].owner === 'enemy') { // checks ownership, then when confirmed
+            let adjacentToPlayer = neighbors.some(neighbor => grid[neighbor] && grid[neighbor].owner === 'player'); // check all neighbours (in logic.js) to see if they are owned by player
+            if (adjacentToPlayer) { // if green
+                convertible.push(i); // you can now make this red one pushable
             }
         }
     }
@@ -209,30 +206,25 @@ function displayEventText(text) {
 }
 
 function triggerRandomEvent() {
-    
-    // 70% chance of random event
     if (Math.random() < 0.7) {
         let randomEvent = randomEvents[Math.floor(Math.random() * randomEvents.length)];
         randomEvent.effects.call(randomEvent);
-        
-    // Add to current turn events
-        currentTurnEvents.push(randomEvent);
+        currentTurnEvents.push(randomEvent); // Save event for display
     }
 }
 
 function clearTurnEvents() {
-    currentTurnEvents = [];
+    currentTurnEvents = []; // Clear events from last turn
 }
 
-// Draw event text at bottom of screen
 function drawEventText() {
     if (eventText) {
         fill(0);
-        rect(0, height - 40, width, 40);
+        rect(0, height/2 - 80, width, 40);
         fill(255);
         textSize(16);
         textAlign(CENTER, CENTER);
-        text(eventText, width/2, height - 20);
+        text(eventText, width/2, height/2 - 60);
     }
 }
 
@@ -259,7 +251,6 @@ function setupRandomEvents() {
             "International media has increased coverage of your cause.",
             function() {
                 player.journalistPower += 20;
-                player.sympathy += 5;
                 displayEventText(this.description);
             }
         ),
@@ -267,7 +258,7 @@ function setupRandomEvents() {
             "Popular Support",
             "Your people rally behind your cause, offering support.",
             function() {
-                player.sympathy += 10;
+                player.journalistPower += 20;
                 displayEventText(this.description);
             }
         ),
@@ -291,7 +282,7 @@ function setupRandomEvents() {
             "Propaganda Campaign",
             "Enemy propaganda has diminished public support.",
             function() {
-                player.sympathy = Math.max(0, player.sympathy - 8);
+                player.journalistPower += 20;
                 displayEventText(this.description);
             }
         ),
@@ -313,33 +304,25 @@ function setupRandomEvents() {
     ];
 }
 
-function triggerEvent1() {
-    displayEventText("The attack was thankfully expected, and they made less progress than anticipated.")
-    player.guns += 30;
+function convertGreenToRed() {
+    let playerSquares = grid.filter(square => square.owner === 'player');
+    if (playerSquares.length > 0) {
+        let randomSquare = playerSquares[Math.floor(Math.random() * playerSquares.length)];
+        randomSquare.owner = 'enemy';
+    }
 }
 
-function triggerEvent3() {
-    displayEventText("A slow stalemate seems to be forming, this could take a long while.")
-}
-
-function triggerEvent10() {
-    displayEventText("X is holding an election with a new popular candidate.");
-    
-    // Create New Leader button if it doesn't exist
-    if (!buttonNewLeader) {
-        buttonNewLeader = createGameButton('Negotiate with New Leader');
-        buttonNewLeader.position(3, 250);
-        buttonNewLeader.mousePressed(function(){
-            gameState = "rhetoricGameNewLeader";
-            setupRhetoricGame();
-        });
+function we15yet() {
+    if (turnCounter >= 15) {
+        convertGreenToRed();
+        convertGreenToRed();
+        convertGreenToRed();
     }
 }
 
 function showResourceShop() {
-    
     // Buy guns with money
-    let buyGunsButton = createGameButton("Buy Guns (50 Money - 35 Guns)");
+    let buyGunsButton = createButton("Buy Guns (50 Money - 35 Guns)");
     buyGunsButton.position(400, 280);
     buyGunsButton.mousePressed(function() {
         if (player.money >= 50) {
@@ -352,14 +335,14 @@ function showResourceShop() {
     });
     shopButtons.push(buyGunsButton);
     
-    // Buy journalist power with money
-    let buyJPButton = createGameButton("Buy JP (20 Money - 55 JP)");
+
+    let buyJPButton = createButton("Buy JP (20 Money - 55 JP)");
     buyJPButton.position(400, 305);
     buyJPButton.mousePressed(function() {
-        if (player.money >= 40) {
+        if (player.money >= 20) { 
             player.money -= 20;
             player.journalistPower += 55;
-            displayEventText("Purchased 15 journalist power for 20 money");
+            displayEventText("Purchased 55 journalist power for 20 money");
         } else {
             displayEventText("Not enough money to buy journalist power");
         }
@@ -367,7 +350,7 @@ function showResourceShop() {
     shopButtons.push(buyJPButton);
     
     // Close shop button
-    let closeShopButton = createGameButton("Close Shop");
+    let closeShopButton = createButton("Close Shop");
     closeShopButton.position(400, 330);
     closeShopButton.mousePressed(hideResourceShop);
     shopButtons.push(closeShopButton);
@@ -379,4 +362,15 @@ function hideResourceShop() {
         if (button) button.remove();
     });
     shopButtons = [];
+}
+
+function checkGameOver() {
+    let allRed = grid.every(square => square.owner === 'enemy');
+    if (allRed) {
+        textSize(32);
+        fill(255, 0, 0);
+        textAlign(CENTER, CENTER);
+        text("Game Over", width / 2.1, height / 2.8);
+        removeAllButtons();
+    }
 }

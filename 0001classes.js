@@ -6,8 +6,6 @@ class Game {
     }
 }
 
-
-
 class Event {
     constructor(name, description, effects, requiresButton = false, buttonText = "") {
         this.name = name;
@@ -38,7 +36,7 @@ let events = {
             
             // Create New Leader button if it doesn't exist
             if (!buttonNewLeader) {
-                buttonNewLeader = createGameButton('Negotiate with New Leader');
+                buttonNewLeader = createButton('Negotiate with New Leader');
                 buttonNewLeader.position(500, 400);
                 buttonNewLeader.mousePressed(function(){
                     gameState = "rhetoricGameNewLeader";
@@ -62,7 +60,6 @@ let events = {
             // Negatively impact player resources
             player.guns = Math.max(0, player.guns - 30);
             player.journalistPower = Math.max(0, player.journalistPower - 20);
-            player.sympathy = Math.max(0, player.sympathy - 15);
             
             // Convert some player tiles to enemy
             let playerSquares = grid.reduce((acc, square, index) => 

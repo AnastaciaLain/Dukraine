@@ -5,10 +5,11 @@ function mousePressed() {
 
         if (mouseX > x && mouseX < x + boxSize && mouseY > y && mouseY < y + boxSize) {
             if (grid[i].owner === 'enemy') {
-                let neighbors = getNeighbors(i);
-                let adjacentToPlayer = neighbors.some(neighbor => grid[neighbor] && grid[neighbor].owner === 'player');
+                if (player.guns >= 25) {
+                    let neighbors = getNeighbors(i);
+                    let adjacentToPlayer = neighbors.some(neighbor => grid[neighbor] && grid[neighbor].owner === 'player');
 
-                if (adjacentToPlayer && player.guns >= 25) {
+                    if (adjacentToPlayer) {
                     takeOverLand('player', i);
                     player.guns -= 25; // Decrease the number of guns
                     playerMoves++;
@@ -17,8 +18,8 @@ function mousePressed() {
                     if (playerMoves >= 2) {
                         playerMoves = 0;
                         
-                        let peacePactButton = createGameButton('Negotiate Peace');
-                        let continueWarButton = createGameButton('Continue Fighting');
+                        let peacePactButton = createButton('Negotiate Peace');
+                        let continueWarButton = createButton('Continue Fighting');
 
                         peacePactButton.position(width/2 - 150, height/2 + 100);
                         peacePactButton.mousePressed(initiatePeacePact);
@@ -31,64 +32,86 @@ function mousePressed() {
         }
     }
 }
+function getNeighbors(index) {
+    let neighbors = [];
+    let col = index % 10; //remaining
+    let row = Math.floor(index / 10);
+
+    if (col > 0) neighbors.push(index - 1); // Left, returns index of square to the left
+    if (col < 9) neighbors.push(index + 1); // Right
+    if (row > 0) neighbors.push(index - 10); // Up
+    if (row < 9) neighbors.push(index + 10); // Down, returns index of square below
+
+    return neighbors;
+}
+
 
 function initiatePeacePact() {
     // Remove negotiation buttons
     this.remove();
     // Find and remove the other button
-    for (let btn of document.getElementsByTagName('button')) {
-        if (btn.innerHTML === 'Continue Fighting') {
+    for (let btn of document.getElementsByTagName('button')) { //why getElementsByTagName idk, ask copilot
+        if (btn.innerHTML === 'Continue Fighting') { // why innerHTML is the only thing that works idk ask copilot
+            btn.remove(); // i had difficulties removing a freaking button?!
+            break;
+        }
+    }
+    displayEventText("It seems there are no security-guarantees planned for this. Are you sure?");
+    
+    // Create confirmation buttons
+    let confirmButton = createButton("Yes. Trust.");
+    confirmButton.position(width/3, height/2 + 50);
+    confirmButton.mousePressed(confirmPeacePact);
+    
+    let cancelButton = createButton('No, go back'); 
+    cancelButton.position(width/2 + 50, height/2 + 50);
+    cancelButton.mousePressed(cancelPeacePact); // this kinda breaks tbf, could refer to ContinueWar, but cant be assed to do more weird button removal
+}
+
+function confirmPeacePact() {
+    this.remove();
+    for (let btn of document.getElementsByTagName('button')) { //copilot
+        if (btn.innerHTML === 'No, go back') {
             btn.remove();
             break;
         }
     }
-
-    // Create confirmation dialog
-    textSize(24);
-    fill(255);
-    textAlign(CENTER, CENTER);
-    text("Are you sure you want to negotiate peace with Z?", width/2, height/2 - 50);
-    text("It seems there are no security-guarantees planned for this.", width/2, height/2 - 20);
-    
-    // Create confirmation buttons
-    let confirmButton = createGameButton("Yes, Despite no security-guarantee");
-    confirmButton.position(width/5, height/2 + 50);
-    confirmButton.mousePressed(confirmPeacePact);
-    
-    let cancelButton = createGameButton('No, go back');
-    cancelButton.position(width/2 + 50, height/2 + 50);
-    cancelButton.mousePressed(cancelPeacePact);
-}
-
-function confirmPeacePact() {
-    // Remove confirmation buttons
     removeAllButtons();
     
     // Simulate 20 turns passing
     turnCounter += 20;
     
     // Create a button to continue
-    let continueButton = createGameButton('Continue');
+    let continueButton = createButton('Continue');
     continueButton.position(width/2 - 50, height/2 + 100);
     continueButton.mousePressed(function() {
-        turnCounter += 25;
-        startGameOver();
+        continueButton.remove(); 
+        
+        // dramatic effect/twist pause
+        setTimeout(function() {
+            turnCounter += 25;
+            startGameOver();
+        }, 3000);
     });
-
-    // Call playTurn to handle the enemy's turn
-    playTurn();
+    playTurn(); // going to the new turn
 }
 
 function cancelPeacePact() {
-    // Remove confirmation buttons
+    this.remove();
+    for (let btn of document.getElementsByTagName('button')) { //copilot
+        if (btn.innerHTML === 'Yes. Trust.') {
+            btn.remove();
+            break;
+        }
+    }
     removeAllButtons();
     
     // Restore original negotiation buttons
-    let peacePactButton = createGameButton('Negotiate Peace');
+    let peacePactButton = createButton('Negotiate Peace');
     peacePactButton.position(width/2 - 150, height/2 + 100);
     peacePactButton.mousePressed(initiatePeacePact);
     
-    let continueWarButton = createGameButton('Continue Fighting');
+    let continueWarButton = createButton('Continue Fighting');
     continueWarButton.position(width/2 + 50, height/2 + 100);
     continueWarButton.mousePressed(continueWarfare);
 }
@@ -97,8 +120,7 @@ function cancelPeacePact() {
 function continueWarfare() {
     // Remove negotiation buttons
     this.remove();
-    // Find and remove the other button
-    for (let btn of document.getElementsByTagName('button')) {
+    for (let btn of document.getElementsByTagName('button')) { //copilot
         if (btn.innerHTML === 'Negotiate Peace') {
             btn.remove();
             break;
@@ -107,7 +129,7 @@ function continueWarfare() {
 
     // Enemy takes 2 random green squares
     let playerSquares = grid.reduce((acc, square, index) => 
-        square.owner === 'player' ? [...acc, index] : acc, []);
+        square.owner === 'player' ? [...acc, index] : acc, []); //copilot
     
     // Take 2 random green squares
     for (let i = 0; i < 2 && playerSquares.length > 0; i++) {
@@ -115,25 +137,20 @@ function continueWarfare() {
         let squareToTake = playerSquares[randomIndex];
         
         takeOverLand('enemy', squareToTake);
-        // Remove this square from possible future selections
+        // Ensure they're not taking their own squares
         playerSquares.splice(randomIndex, 1);
     }
 
-    // Reset rhetoric game availability for the new turn
     resetRhetoricGameAvailability();
     showMainGameButtons();
-    
-    // Clear turn events
     clearTurnEvents();
     
-    // Return to main game state
     gameState = "mainGame";
     
-    // Increment turn counter
     turnCounter++;
 
     // Check for turn-specific events
-    if (turnCounter === 1) {
+    if (turnCounter === 1) { // probably shouldve just done switch statements again but whatever
         triggerEvent1();
     } else if (turnCounter === 3) {
         triggerEvent3();
@@ -178,51 +195,7 @@ function takeOverLand(character, index) {
 }
 
 function playTurn() {
-    if (game.turn === 'enemy') {
-        let moves = 0;
-        for (let moves = 0; moves < 2; moves++) {
-            // Find all player squares adjacent to enemy squares
-            let validChoices = [];
-            for (let i = 0; i < gridSize; i++) {
-                if (grid[i].owner === 'player') {
-                    let neighbors = getNeighbors(i);
-                    for (let neighbor of neighbors) {
-                        if (grid[neighbor] && grid[neighbor].owner === 'enemy') {
-                            validChoices.push(i);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // Pick a random valid choice
-            if (validChoices.length > 0) {
-                let choice = validChoices[Math.floor(Math.random() * validChoices.length)];
-                takeOverLand('enemy', choice);
-                console.log(`Enemy moves: ${moves + 1}`);
-            } else {
-                break; // No valid choices left
-            }
-        }
-
-        game.turn = 'player';
-
-        // Increment turn counter
-        turnCounter++;
-
-        // Check for events
-        if (turnCounter === 1) {
-            triggerEvent1();
-        } else if (turnCounter === 3) {
-            triggerEvent3();
-        } else if (turnCounter === 10) {
-            triggerEvent10();
-        } else if (turnCounter === 11) {
-            triggerEvent11();
-        } else if (turnCounter === 15) {
-            triggerEvent15();
-        }
-    }
+    we15yet();
     game.checkGameOver();
 }
 
@@ -241,7 +214,7 @@ function triggerEvent10() {
     
     // Create New Leader button if it doesn't exist
     if (!buttonNewLeader) {
-        buttonNewLeader = createGameButton('Negotiate with New Leader');
+        buttonNewLeader = createButton('Negotiate with New Leader');
         buttonNewLeader.position(3, 250);
         buttonNewLeader.mousePressed(function(){
             gameState = "rhetoricGameNewLeader";
@@ -270,33 +243,10 @@ function triggerEvent15() {
     player.journalistPower -= 20;
     
     // Update nation relationships
-    nationSympathy[NATION_X] -= 70;
+    nationSympathy[NATION_X] -= 51;
     nationSympathy[NATION_X] = Math.max(0, nationSympathy[NATION_X]);
     nationSympathy[NATION_Y] += 20;
-    nationSympathy[NATION_Y] = Math.min(100, nationSympathy[NATION_Y]);
-    
-    // Take 3 random player squares
-    let playerSquares = grid.reduce((acc, square, index) => 
-        square.owner === 'player' ? [...acc, index] : acc, []);
-    
-    for (let i = 0; i < 3 && playerSquares.length > 0; i++) {
-        let randomIndex = Math.floor(Math.random() * playerSquares.length);
-        let squareToTake = playerSquares[randomIndex];
-        
-        takeOverLand('enemy', squareToTake);
-        playerSquares.splice(randomIndex, 1);
+    nationSympathy[NATION_Y] = Math.min(110, nationSympathy[NATION_Y]);
     }
 }
 
-function getNeighbors(index) {
-    let neighbors = [];
-    let col = index % 10;
-    let row = Math.floor(index / 10);
-
-    if (col > 0) neighbors.push(index - 1); // Left
-    if (col < 4) neighbors.push(index + 1); // Right
-    if (row > 0) neighbors.push(index - 10); // Up
-    if (row < 3) neighbors.push(index + 10); // Down
-
-    return neighbors;
-}

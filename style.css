@@ -19,3 +19,6 @@ canvas {
 button {
   animation: bop 5s infinite;
 }
+.bop {
+  animation: bop 5s infinite;
+}
