@@ -161,11 +161,10 @@ function drawNationSympathy() {
 
 // remember to check the logicjs and top let if you're messing with these numbers holy shit
 function drawGrid() {
-    for (let i = 0; i < gridSize; i++) {
+    for (let i = 0; i < gridSize; i++) { // gridsize up top
         let x = startX + (i % 10) * boxSize;
         let y = startY + Math.floor(i / 10) * boxSize;
         
-        // Set color based on owner
         if (grid[i].owner === 'player') {
             fill(0, 255, 0);     // Green for player
         } else if (grid[i].owner === 'enemy') {
@@ -191,22 +190,8 @@ function findConvertibleEnemySquares() { //copilot saved me
     return convertible;
 }
 
-function displayEventText(text) {
-    eventText = text;
-    
-    // Clear any existing timeout
-    if (eventTextTimeout) {
-        clearTimeout(eventTextTimeout);
-    }
-    
-    // Set timeout to clear text after 5 seconds
-    eventTextTimeout = setTimeout(() => {
-        eventText = "";
-    }, 5000);
-}
-
 function triggerRandomEvent() {
-    if (Math.random() < 0.7) {
+    if (Math.random() < 0.6) {
         let randomEvent = randomEvents[Math.floor(Math.random() * randomEvents.length)];
         randomEvent.effects.call(randomEvent);
         currentTurnEvents.push(randomEvent); // Save event for display
@@ -349,7 +334,6 @@ function showResourceShop() {
     });
     shopButtons.push(buyJPButton);
     
-    // Close shop button
     let closeShopButton = createButton("Close Shop");
     closeShopButton.position(400, 330);
     closeShopButton.mousePressed(hideResourceShop);
@@ -365,12 +349,8 @@ function hideResourceShop() {
 }
 
 function checkGameOver() {
-    let allRed = grid.every(square => square.owner === 'enemy');
+    let allRed = grid.every(square => square.owner === 'enemy'); // doesnt work but fuck it
     if (allRed) {
-        textSize(32);
-        fill(255, 0, 0);
-        textAlign(CENTER, CENTER);
-        text("Game Over", width / 2.1, height / 2.8);
-        removeAllButtons();
+        startGameOver();
     }
 }

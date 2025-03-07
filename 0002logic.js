@@ -18,8 +18,8 @@ function mousePressed() {
                     if (playerMoves >= 2) {
                         playerMoves = 0;
                         
-                        let peacePactButton = createButton('Negotiate Peace');
-                        let continueWarButton = createButton('Continue Fighting');
+                        let peacePactButton = createButton('Negotiate Peace'); // what could go wrong
+                        let continueWarButton = createButton('Continue Fighting'); // at the same time, what could go wrong :)
 
                         peacePactButton.position(width/2 - 150, height/2 + 100);
                         peacePactButton.mousePressed(initiatePeacePact);
@@ -127,18 +127,15 @@ function continueWarfare() {
         }
     }
 
-    // Enemy takes 2 random green squares
-    let playerSquares = grid.reduce((acc, square, index) => 
-        square.owner === 'player' ? [...acc, index] : acc, []); //copilot
+    // Enemy takes 2 random green squares (makes sure theyre green first)
+    let playerSquares = grid.reduce((acc, square, index) =>  // identify squares owned by player
+        square.owner === 'player' ? [...acc, index] : acc, []);  // creates new array with accumulated, and adds index to keep track of player squares
     
-    // Take 2 random green squares
     for (let i = 0; i < 2 && playerSquares.length > 0; i++) {
         let randomIndex = Math.floor(Math.random() * playerSquares.length);
         let squareToTake = playerSquares[randomIndex];
-        
-        takeOverLand('enemy', squareToTake);
-        // Ensure they're not taking their own squares
-        playerSquares.splice(randomIndex, 1);
+        playerSquares.splice(randomIndex, 1); // Ensure they're not taking their own squares
+        takeOverLand('enemy', squareToTake); // finally turning them red
     }
 
     resetRhetoricGameAvailability();
@@ -196,7 +193,7 @@ function takeOverLand(character, index) {
 
 function playTurn() {
     we15yet();
-    game.checkGameOver();
+    checkGameOver();
 }
 
 // Define event functions
